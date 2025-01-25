@@ -1,0 +1,1 @@
+supabasePassword: cooUEBCisADHu5ji
