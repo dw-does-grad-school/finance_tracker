@@ -1,5 +1,5 @@
 <template>
-    <div class="grid grid-cols-2 py-4 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+    <div class="grid grid-cols-2 py-4 border-b border-slate-200">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-1">
                 <UIcon name="i-heroicons-arrow-up-right" class="text-green-600" />

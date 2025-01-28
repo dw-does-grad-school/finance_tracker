@@ -24,5 +24,11 @@
 
 <script setup>
 import { transactionView } from '~/constants'
-const viewSelected = ref(transactionView[0])
+const viewSelected = ref(transactionView[0]); 
+
+const supabase = useSupabaseClient(); 
+
+const {data, error} = await supabase.from('transactions').select()
+
+console.log(data, error)
 </script>
