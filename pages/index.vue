@@ -88,14 +88,22 @@ const removeTransaction = (deletedId) => {
 await fetchTransactions();
 
 const transactionsGroupedByDate = computed(() => {
-  let grouped = {}
-  for (const transaction of transactions.value) {
-    const date = new Date(transaction.created_at).toISOString().split('T')[0]
+  let grouped = {};
+
+  // Sort transactions by date (most recent first)
+  const sortedTransactions = [...transactions.value].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  for (const transaction of sortedTransactions) {
+    const date = new Date(transaction.created_at).toISOString().split('T')[0];
     if (!grouped[date]) {
-      grouped[date] = []
+      grouped[date] = [];
     }
-    grouped[date].push(transaction)
+    grouped[date].push(transaction);
   }
-  return grouped
+
+  return grouped;
 });
+
 </script>
