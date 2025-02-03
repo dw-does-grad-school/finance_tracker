@@ -27,7 +27,7 @@
     transaction: Object
   })
 
-  const emit = defineEmits(['deleted'])
+  const emit = defineEmits(['deleted', 'saved'])
   const isIncome = computed(() => props.transaction.type ===  'Income')
   const icon = computed(
     () => isIncome.value ? 'i-heroicons-arrow-up-right' : 'i-heroicons-arrow-down-left'
@@ -41,6 +41,7 @@
   const isLoading = ref(false)
   const toast = useToast()
   const supabase = useSupabaseClient()
+  const transactions = ref([]);
 
   const deleteTransaction = async () => {
     isLoading.value = true
@@ -83,4 +84,34 @@
       }
     ]
   ]
+
+  const form = ref();
+
+  const save = async () => {
+    if (form.value.errors.length) return
+
+    isLoading.value = true
+    try {
+      const { error, data } = await supabase.from('transactions').upsert({ ...state.value })
+      
+      if (!error) {
+        toast.add({
+          title: 'Transaction saved successfully',
+          icon: 'i-heroicons-check-circle'
+        })
+        isOpen.value = false
+        // Emit the event so that the parent can update its UI
+        emit('saved', data)
+      }
+    } catch (e) {
+      toast.add({
+        title: 'Transaction not saved',
+        description: e.message,
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'red'
+      })
+    } finally {
+      isLoading.value = false
+    }
+  }
   </script>

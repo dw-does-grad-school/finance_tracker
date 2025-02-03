@@ -21,8 +21,8 @@
             </div>
         </div>
         <div>
-        <TransactionModal v-model="isOpen" />
-      <UButton icon="i-heroicons-plus-circle" color="white" variant="solid" label="Add" @click="isOpen = true" />
+            <TransactionModal v-model="isOpen" @saved="onTransactionSaved" />
+            <UButton icon="i-heroicons-plus-circle" color="white" variant="solid" label="Add" @click="isOpen = true" />
         </div>
     </section>
 
@@ -61,6 +61,8 @@ const expense = computed(() =>
     transactions.value.filter(transaction => transaction.type === 'Expense')
 )
 
+
+
 const incomeCount = computed(() => income.value.length)
 const expenseCount = computed(() => expense.value.length)
 
@@ -82,6 +84,16 @@ const fetchTransactions = async () => {
 // Function to remove deleted transaction from the list
 const removeTransaction = (deletedId) => {
     transactions.value = transactions.value.filter(transaction => transaction.id !== deletedId);
+};
+
+// Called when a new transaction has been saved
+const onTransactionSaved = async () => {
+    // Option 1: re-fetch all transactions
+    await fetchTransactions();
+    
+    // Option 2: If the saved event sends the new transaction data,
+    // append it to the transactions array:
+    // transactions.value.push(newTransaction);
 };
 
 // Fetch transactions on mount

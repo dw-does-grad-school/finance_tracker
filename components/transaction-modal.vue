@@ -4,7 +4,7 @@
         <template #header>
           Add Transaction
         </template>
-        <UForm :state="state" :schema="schema">
+        <UForm ref="form" :state="state" :schema="schema" @submit.prevent="save">
 
             <UFormGroup :required="true" label="Transaction Type" name="type" class="mb-4">
                 <USelect placeholder="Select the transaction type" :options="types" v-model="state.type" />
@@ -26,8 +26,8 @@
                 <USelect placeholder="Category" :options="categories" v-model="state.category"/>
             </UFormGroup>
 
+            <UButton type="submit" color="black" variant="solid" label="Save" :loading="isLoading" />
         </UForm>
-      <UButton type="submit" color="black" variant="solid" label="Save" />
       </UCard>
     </UModal>
   </template>
@@ -39,7 +39,7 @@
         modelValue: Boolean
     })
 
-    const emit = defineEmits(['update:modelValue'])
+    const emit = defineEmits(['update:modelValue', 'saved'])
 
     const defaultSchema = z.object({
         created_at: z.string(), 
@@ -70,9 +70,35 @@
     )
 
     const form = ref()
+    const isLoading = ref(false)
+    const supabase = useSupabaseClient()
+    const toast = useToast()
 
     const save = async () => {
         if (form.value.errors.length) return
+
+        isLoading.value = true
+        try{
+            const { error } = await supabase.from('transactions').upsert({ ...state.value })
+            
+            if (!error){
+                toast.add({
+                    'title': 'Transaction saved successfully',
+                    'icon': 'i-heroicons-check-circle'
+                })
+                isOpen.value = false
+                emit('saved')
+            }
+        }catch (e){
+            toast.add({
+                title: 'Transaction not saved',
+                description: e.message,
+                icon: 'i-heroicons-exclamation-circle',
+                color: 'red'
+            })
+        }finally{
+            isLoading.value = false
+        }
     }
 
     const initialState = {
