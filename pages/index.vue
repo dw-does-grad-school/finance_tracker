@@ -1,8 +1,9 @@
 <template>
     <section class="flex items-center justify-between mb-10">
         <h1 class="text-4xl font-extrabold">Summary</h1>
-        <div>
+        <div class="flex gap-4">
             <USelectMenu :options="transactionView" v-model="viewSelected" />
+            <USelectMenu :options="timePeriodOptions" v-model="selectedPeriod" />
         </div>
     </section>
 
@@ -26,15 +27,15 @@
         </div>
     </section>
 
-    <section v-if="transactions.length">
+    <section v-if="filteredTransactions.length">
         <Transaction 
-            v-for="transaction in transactions" 
+            v-for="transaction in filteredTransactions" 
             :key="transaction.id" 
             :transaction="transaction" 
             @deleted="removeTransaction" 
         />
 
-        <div v-for="(transactionsOnDay, date) in transactionsGroupedByDate" :key="date" class="mb-10">
+        <div v-for="(transactionsOnDay, date) in groupedTransactionsByDate" :key="date" class="mb-10">
             <DailyTransactionSummary :date="date" :transactions="transactionsOnDay" />
             <Transaction 
                 v-for="transaction in transactionsOnDay" 
@@ -47,75 +48,77 @@
 </template>
 
 <script setup>
-import { transactionView } from '~/constants'
-const viewSelected = ref(transactionView[0]); 
-const supabase = useSupabaseClient(); 
-const transactions = ref([])
-const isOpen = ref(false)
+import { ref, computed } from 'vue'
+import { transactionView, timePeriodOptions } from '~/constants'
+import { useTransactions } from '~/composables/useTransactions'
+import { useSelectedTimePeriod } from '~/composables/useSelectedTimePeriod'
 
-const income = computed(() => 
-    transactions.value.filter(transaction => transaction.type === 'Income')
-)
+const viewSelected = ref(transactionView[0])
+const selectedPeriod = ref('All')
 
-const expense = computed(() => 
-    transactions.value.filter(transaction => transaction.type === 'Expense')
-)
+const timePeriod = useSelectedTimePeriod(selectedPeriod)
 
+const { 
+  transactions, 
+  fetchTransactions, 
+  deleteTransaction
+} = useTransactions()
 
-
-const incomeCount = computed(() => income.value.length)
-const expenseCount = computed(() => expense.value.length)
-
-const incomeTotal = computed(() => income.value.reduce((acc, cur) => acc + cur.amount, 0))
-const expenseTotal = computed(() => expense.value.reduce((acc, cur) => acc - cur.amount, 0))
-
-const fetchTransactions = async () => {
-    const { data, error } = await supabase
-        .from('transactions')
-        .select();
-
-    if (error) {
-        console.error("Error fetching transactions:", error.message);
-        return;
+const filteredTransactions = computed(() => {
+  let filtered = transactions.value;
+  
+  if (timePeriod.value && timePeriod.value.current) {
+    const { from, to } = timePeriod.value.current;
+    filtered = filtered.filter(transaction => {
+      const tDate = new Date(transaction.created_at);
+      return tDate >= from && tDate <= to;
+    });
+  }
+  
+  if (viewSelected.value && viewSelected.value !== 'All Transactions') {
+    if (viewSelected.value === 'Income') {
+      filtered = filtered.filter(t => t.type === 'Income');
+    } else if (viewSelected.value === 'Expenses') {
+      filtered = filtered.filter(t => t.type === 'Expense');
     }
-    transactions.value = data;
-};
+  }
+  
+  return filtered;
+});
 
-// Function to remove deleted transaction from the list
-const removeTransaction = (deletedId) => {
-    transactions.value = transactions.value.filter(transaction => transaction.id !== deletedId);
-};
+const income = computed(() => filteredTransactions.value.filter(t => t.type === 'Income'));
+const expense = computed(() => filteredTransactions.value.filter(t => t.type === 'Expense'));
 
-// Called when a new transaction has been saved
-const onTransactionSaved = async () => {
-    // Option 1: re-fetch all transactions
-    await fetchTransactions();
-    
-    // Option 2: If the saved event sends the new transaction data,
-    // append it to the transactions array:
-    // transactions.value.push(newTransaction);
-};
+const incomeCount = computed(() => income.value.length);
+const expenseCount = computed(() => expense.value.length);
 
-// Fetch transactions on mount
-await fetchTransactions();
+const incomeTotal = computed(() => income.value.reduce((acc, t) => acc + t.amount, 0));
+const expenseTotal = computed(() => expense.value.reduce((acc, t) => acc - t.amount, 0));
 
-const transactionsGroupedByDate = computed(() => {
-  let grouped = {};
-
-  // Sort transactions by date (most recent first)
-  const sortedTransactions = [...transactions.value].sort(
+const groupedTransactionsByDate = computed(() => {
+  const grouped = {};
+  const sortedTransactions = [...filteredTransactions.value].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
-
-  for (const transaction of sortedTransactions) {
+  
+  sortedTransactions.forEach(transaction => {
     const date = new Date(transaction.created_at).toISOString().split('T')[0];
-    if (!grouped[date]) {
-      grouped[date] = [];
-    }
+    if (!grouped[date]) grouped[date] = [];
     grouped[date].push(transaction);
-  }
-
+  });
+  
   return grouped;
 });
 
+const isOpen = ref(false)
+
+await fetchTransactions()
+
+const onTransactionSaved = async () => {
+  await fetchTransactions()
+}
+
+const removeTransaction = (deletedId) => {
+  transactions.value = transactions.value.filter(transaction => transaction.id !== deletedId)
+}
 </script>
