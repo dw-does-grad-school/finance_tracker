@@ -61,9 +61,9 @@
     }catch(error){
       
       toast.add({
-        title: 'Transaction deleted successfully',
-        icon: 'i-heroicons-check-circle', 
-        color:'red'
+        title: 'Failed to delete transaction',
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'red'
       })
     } finally {
       isLoading.value = false

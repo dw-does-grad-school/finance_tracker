@@ -21,20 +21,13 @@
                 You have {{ incomeCount }} income transactions and {{ expenseCount }} expense transactions this period. 
             </div>
         </div>
-        <div>
+        <div class="flex items-center gap-4">
             <TransactionModal v-model="isOpen" @saved="onTransactionSaved" />
             <UButton icon="i-heroicons-plus-circle" color="white" variant="solid" label="Add" @click="isOpen = true" />
         </div>
     </section>
 
     <section v-if="filteredTransactions.length">
-        <Transaction 
-            v-for="transaction in filteredTransactions" 
-            :key="transaction.id" 
-            :transaction="transaction" 
-            @deleted="removeTransaction" 
-        />
-
         <div v-for="(transactionsOnDay, date) in groupedTransactionsByDate" :key="date" class="mb-10">
             <DailyTransactionSummary :date="date" :transactions="transactionsOnDay" />
             <Transaction 
@@ -58,11 +51,7 @@ const selectedPeriod = ref('All')
 
 const timePeriod = useSelectedTimePeriod(selectedPeriod)
 
-const { 
-  transactions, 
-  fetchTransactions, 
-  deleteTransaction
-} = useTransactions()
+const { transactions, fetchTransactions } = useTransactions()
 
 const filteredTransactions = computed(() => {
   let filtered = transactions.value;
@@ -93,7 +82,7 @@ const incomeCount = computed(() => income.value.length);
 const expenseCount = computed(() => expense.value.length);
 
 const incomeTotal = computed(() => income.value.reduce((acc, t) => acc + t.amount, 0));
-const expenseTotal = computed(() => expense.value.reduce((acc, t) => acc - t.amount, 0));
+const expenseTotal = computed(() => expense.value.reduce((acc, t) => acc + t.amount, 0));
 
 const groupedTransactionsByDate = computed(() => {
   const grouped = {};
@@ -112,13 +101,13 @@ const groupedTransactionsByDate = computed(() => {
 
 const isOpen = ref(false)
 
-await fetchTransactions()
-
-const onTransactionSaved = async () => {
-  await fetchTransactions()
+const onTransactionSaved = (savedTransaction) => {
+  transactions.value.push(savedTransaction)
 }
 
 const removeTransaction = (deletedId) => {
   transactions.value = transactions.value.filter(transaction => transaction.id !== deletedId)
 }
+
+fetchTransactions()
 </script>

@@ -35,12 +35,12 @@ const percentageTrend = computed(() => {
     const larger = Math.max(props.amount, props.lastAmount)
     const smaller = Math.min(props.amount, props.lastAmount)
 
-    const ratio = ((larger - smaller)/smaller) * 100
+    const ratio = ((larger - smaller) / smaller) * 100
 
     return `${Math.ceil(ratio)}%`
 })
 
-const { currency } = useCurrency(props.amount)
+const { currency } = useCurrency(computed(() => props.amount))
 
 </script>
 

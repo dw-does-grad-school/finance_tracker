@@ -44,6 +44,7 @@
     const emit = defineEmits(['update:modelValue', 'saved'])
 
     const { addTransaction } = useTransactions()
+    const toast = useToast()
 
     const defaultSchema = z.object({
         created_at: z.string(), 
@@ -75,24 +76,6 @@
 
     const form = ref()
     const isLoading = ref(false)
-    const toast = useToast()
-
-    const save = async () => {
-        if (form.value.errors.length) return
-
-        isLoading.value = true
-        try {
-            const savedData = await addTransaction({ ...state.value })
-            if (savedData) {
-                emit('saved', savedData)
-                isOpen.value = false
-            }
-        } catch (e) {
-            // Error handling if needed
-        } finally {
-            isLoading.value = false
-        }
-    }
 
     const initialState = {
         type: undefined, 
@@ -117,4 +100,26 @@
         emit('update:modelValue', value)
     }
   })
+
+  const save = async () => {
+    if (form.value.errors.length) return
+
+    isLoading.value = true
+    try {
+        const savedData = await addTransaction({ ...state.value })
+        if (savedData) {
+            emit('saved', savedData)
+            isOpen.value = false
+        }
+    } catch (e) {
+        toast.add({
+            title: 'Error saving transaction',
+            description: e.message,
+            icon: 'i-heroicons-exclamation-circle',
+            color: 'red'
+        })
+    } finally {
+        isLoading.value = false
+    }
+  }
   </script>
