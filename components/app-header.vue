@@ -8,3 +8,20 @@
         </div>
     </header>
 </template>
+
+<script setup>
+
+// Initialize the user composable
+const user = useSupabaseUser()
+
+// Watch for changes in the user state
+watch(
+  user,
+  (currentUser) => {
+    if (currentUser) {
+      console.log("User is logged in")
+    }
+  },
+  { immediate: true }
+)
+</script>
