@@ -30,6 +30,9 @@
     const pending = ref(false)
     const toast = useToast()
     const supabase = useSupabaseClient()
+    import { isUserLoggedIn } from '~/composables/isUserLoggedIn'
+    
+    isUserLoggedIn('/')
 
 
     const handleLogin = async () => {
@@ -38,7 +41,7 @@
         const { error } = await supabase.auth.signInWithOtp({
         email: email.value,
         options: {
-            emailRedirectTo: 'http://localhost:3000'
+            emailRedirectTo: 'http://localhost:3000/confirm'
         }
         })
         if (error) {
